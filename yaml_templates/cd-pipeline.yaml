@@ -1,0 +1,27 @@
+trigger: none
+
+pool: default
+
+resources:
+  pipelines:
+  - pipeline: artifacts01
+    source: 'DEMO001-CI'
+    trigger:
+      branches:
+      - release/*
+
+
+stages:
+- stage: DEV
+  displayName: 'DEV Deployment'
+
+  variables:
+
+    - group: DEMO_001_DEV
+
+ 
+  jobs:
+    - template: cd-pipeline-template.yaml
+      parameters: 
+        environment: 'dev'
+        azureSubscription: 'CloudSamirServiceConnection'

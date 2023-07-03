@@ -1,0 +1,279 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Scope_try": {
+                "type": "Scope",
+                "actions": {
+                    "Transform_using_Data_Mapper_XSLT": {
+                        "type": "Xslt",
+                        "kind": "DataMapper",
+                        "inputs": {
+                            "content": "@triggerBody()",
+                            "map": {
+                                "source": "LogicApp",
+                                "name": "DataMapper002.xslt"
+                            }
+                        },
+                        "runAfter": {
+                            "Validate_Body_Input_JSON": [
+                                "SUCCEEDED"
+                            ]
+                        }
+                    },
+                    "For_each": {
+                        "type": "Foreach",
+                        "foreach": "@body('Transform_using_Data_Mapper_XSLT')?['items']",
+                        "actions": {
+                            "Check_if_Category_Eq_'Hardware'": {
+                                "type": "If",
+                                "expression": {
+                                    "and": [
+                                        {
+                                            "equals": [
+                                                "@item()?['category']",
+                                                "hardware"
+                                            ]
+                                        }
+                                    ]
+                                },
+                                "actions": {
+                                    "Send_message_to_hardware_queue": {
+                                        "type": "ServiceProvider",
+                                        "inputs": {
+                                            "parameters": {
+                                                "entityName": "hardware-queue",
+                                                "message": {
+                                                    "contentData": "@item()"
+                                                }
+                                            },
+                                            "serviceProviderConfiguration": {
+                                                "connectionName": "serviceBus",
+                                                "operationId": "sendMessage",
+                                                "serviceProviderId": "/serviceProviders/serviceBus"
+                                            }
+                                        }
+                                    },
+                                    "Increment_variable_hardware": {
+                                        "type": "IncrementVariable",
+                                        "inputs": {
+                                            "name": "CountHardware",
+                                            "value": 1
+                                        },
+                                        "runAfter": {
+                                            "Send_message_to_hardware_queue": [
+                                                "SUCCEEDED"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "else": {
+                                    "actions": {
+                                        "Send_message_to_software_queue": {
+                                            "type": "ServiceProvider",
+                                            "inputs": {
+                                                "parameters": {
+                                                    "entityName": "software-queue",
+                                                    "message": {
+                                                        "contentData": "@item()"
+                                                    }
+                                                },
+                                                "serviceProviderConfiguration": {
+                                                    "connectionName": "serviceBus",
+                                                    "operationId": "sendMessage",
+                                                    "serviceProviderId": "/serviceProviders/serviceBus"
+                                                }
+                                            }
+                                        },
+                                        "Increment_variable_software": {
+                                            "type": "IncrementVariable",
+                                            "inputs": {
+                                                "name": "CountSoftware",
+                                                "value": 1
+                                            },
+                                            "runAfter": {
+                                                "Send_message_to_software_queue": [
+                                                    "SUCCEEDED"
+                                                ]
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "runAfter": {
+                            "Transform_using_Data_Mapper_XSLT": [
+                                "SUCCEEDED"
+                            ]
+                        },
+                        "trackedProperties": {}
+                    },
+                    "Response": {
+                        "type": "Response",
+                        "kind": "Http",
+                        "inputs": {
+                            "statusCode": 200,
+                            "body": {
+                                "status": "success",
+                                "CountSoftwareSent": "@variables('CountSoftware')",
+                                "CountHardwareSent": "@variables('CountHardware')"
+                            }
+                        },
+                        "runAfter": {
+                            "For_each": [
+                                "SUCCEEDED"
+                            ]
+                        }
+                    },
+                    "Validate_Body_Input_JSON": {
+                        "type": "ParseJson",
+                        "inputs": {
+                            "content": "@triggerBody()",
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "products": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "description": {
+                                                    "type": "string"
+                                                },
+                                                "features": {
+                                                    "type": "string"
+                                                },
+                                                "price": {
+                                                    "type": "string"
+                                                },
+                                                "url": {
+                                                    "type": "string"
+                                                },
+                                                "category": {
+                                                    "type": "string"
+                                                },
+                                                "subcategory": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "name",
+                                                "description",
+                                                "features",
+                                                "price",
+                                                "url",
+                                                "category",
+                                                "subcategory"
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "runAfter": {
+                    "Init_variable_\"Count_Hardware\"": [
+                        "SUCCEEDED"
+                    ]
+                }
+            },
+            "init_Variable_\"Count_software\"": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "CountSoftware",
+                            "type": "integer",
+                            "value": 0
+                        }
+                    ]
+                },
+                "runAfter": {}
+            },
+            "Init_variable_\"Count_Hardware\"": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "CountHardware",
+                            "type": "integer",
+                            "value": 0
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "init_Variable_\"Count_software\"": [
+                        "SUCCEEDED"
+                    ]
+                }
+            },
+            "Scope_Catch": {
+                "type": "Scope",
+                "actions": {
+                    "Response_Error": {
+                        "type": "Response",
+                        "kind": "Http",
+                        "inputs": {
+                            "statusCode": 400,
+                            "body": {
+                                "status": "Error Occured",
+                                "errorDetail": "@{first(body('Filter_array'))?['error']['message']}"
+                            }
+                        },
+                        "runAfter": {
+                            "Filter_array": [
+                                "SUCCEEDED"
+                            ]
+                        }
+                    },
+                    "Filter_array": {
+                        "type": "Query",
+                        "inputs": {
+                            "from": "@result('Scope_try')",
+                            "where": "@equals(item()?['status'],'Failed')"
+                        }
+                    },
+                    "Terminate_as_Failed": {
+                        "type": "Terminate",
+                        "inputs": {
+                            "runStatus": "Failed",
+                            "runError": {
+                                "code": "@first(body('Filter_array'))?['error']['code']",
+                                "message": "@first(body('Filter_array'))?['error']['message']"
+                            }
+                        },
+                        "runAfter": {
+                            "Response_Error": [
+                                "SUCCEEDED"
+                            ]
+                        }
+                    }
+                },
+                "runAfter": {
+                    "Scope_try": [
+                        "FAILED",
+                        "TIMEDOUT"
+                    ]
+                }
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {},
+        "triggers": {
+            "When_a_HTTP_request_is_received": {
+                "type": "Request",
+                "kind": "Http"
+            }
+        },
+        "parameters": {}
+    },
+    "kind": "Stateful"
+}

@@ -1,0 +1,89 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Send_message": {
+                "type": "ServiceProvider",
+                "inputs": {
+                    "parameters": {
+                        "entityName": "sb-queue",
+                        "message": {
+                            "contentData": "@body('Transform_using_Data_Mapper_XSLT')"
+                        }
+                    },
+                    "serviceProviderConfiguration": {
+                        "connectionName": "serviceBus",
+                        "operationId": "sendMessage",
+                        "serviceProviderId": "/serviceProviders/serviceBus"
+                    }
+                },
+                "runAfter": {
+                    "Transform_using_Data_Mapper_XSLT": [
+                        "SUCCEEDED"
+                    ]
+                }
+            },
+            "Response": {
+                "type": "Response",
+                "kind": "Http",
+                "inputs": {
+                    "statusCode": 200,
+                    "body": {
+                        "status": "success"
+                    }
+                },
+                "runAfter": {
+                    "Send_message": [
+                        "SUCCEEDED"
+                    ]
+                }
+            },
+            "Transform_using_Data_Mapper_XSLT": {
+                "type": "Xslt",
+                "kind": "DataMapper",
+                "inputs": {
+                    "content": "@triggerBody()",
+                    "map": {
+                        "source": "LogicApp",
+                        "name": "DataMapper001.xslt"
+                    }
+                },
+                "runAfter": {}
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {},
+        "triggers": {
+            "When_a_HTTP_request_is_received": {
+                "type": "Request",
+                "kind": "Http",
+                "inputs": {
+                    "schema": {
+                        "data": [
+                            {
+                                "type": "article",
+                                "id": "1",
+                                "attributes": {
+                                    "title": "article 1",
+                                    "body": "this is body desc of article 1",
+                                    "created": "2023-07-03T10:56:29.000Z"
+                                }
+                            },
+                            {
+                                "type": "article",
+                                "id": "2",
+                                "attributes": {
+                                    "title": "article 2",
+                                    "body": "this is body desc of article 2",
+                                    "created": "2023-07-03T10:57:29.000Z"
+                                }
+                            }
+                        ]
+                    }
+                },
+                "operationOptions": "EnableSchemaValidation"
+            }
+        }
+    },
+    "kind": "Stateful"
+}

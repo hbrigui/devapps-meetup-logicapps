@@ -1,0 +1,19 @@
+VS Code Setup - Create a Standard logic app workflow in single-tenant Azure logic Apps using Visual Studio Code
+https://learn.microsoft.com/en-us/azure/logic-apps/create-single-tenant-workflows-visual-studio-code
+
+1- install VS Code
+2- Install Azurite latest extension in VS Code
+3- Install Azure Account extension  in VS Code
+4- Install C# extension in VS Code
+5- .Net SDK 6.X (https://dotnet.microsoft.com/en-us/download/dotnet/6.0)
+      a. Make sure to get the SDK, not any to other downloads.
+6- Install Azure Functions core tools
+7- Install Azure logic App Standard extension  in VS Code
+8- Install Azure logic App Standard Data Mapper extension in VS Code (public preview)
+
+
+First Project : 
+1- Confirm that the Azure Logic Apps Std Project Runtime Setting for extension is set to version ~4.
+      a. on the File menu, go to Preferences > settings
+      b. on the User tab, go to > Extensions > Azure logic Apps (Standard)
+      c. Check Value of "Project Runtime" property

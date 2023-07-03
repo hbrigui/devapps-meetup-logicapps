@@ -1,0 +1,13 @@
+$version: 1
+$input: JSON
+$output: JSON
+$sourceSchema: input.json
+$targetSchema: output.json
+root:
+  articles:
+    $for(/root/data/*):
+      - id: id
+        properties:
+          title: attributes/title
+          description: attributes/body
+          dateCreated: attributes/created

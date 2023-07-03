@@ -1,0 +1,55 @@
+parameters:
+  - name: environment
+  - name: azureSubscription
+
+
+jobs:
+- deployment: deploy_logicapp_resources
+  environment: "${{ parameters.environment }}"
+  variables:
+    deploymentMode: 'Incremental'
+    logicAppCIArtifactName: 'logicapp_publish_artifact'
+
+  strategy:
+    runOnce:
+      deploy:
+        steps:
+
+          - task: AzureAppServiceSettings@1
+            displayName: Azure App Service Settings
+            inputs:
+              azureSubscription: "${{ parameters.azureSubscription }}"
+              appName: '$(var_azure_logicapp_name)'
+              resourceGroupName: '$(var_resourcegroup)'
+            
+              appSettings: |
+                [
+                    {
+                    "name": "serviceBus_connectionString",
+                    "value": "$(var_serviceBus_connectionString)",
+                    "slotSetting": false
+                    },
+                    {
+                    "name": "AzureWebJobsFeatureFlags",
+                    "value": "EnableMultiLanguageWorker",
+                    "slotSetting": false
+                    }
+                ]
+          
+          - task: ArchiveFiles@2
+            displayName: 'Create project zip'
+            inputs:
+              rootFolderOrFile: '$(Pipeline.Workspace)/artifacts01/$(logicAppCIArtifactName)'
+              includeRootFolder: false
+              archiveType: 'zip'
+              archiveFile: '$(Pipeline.Workspace)/artifacts01/$(logicAppCIArtifactName)/$(Build.BuildId).zip'
+              replaceExistingArchive: true
+
+          - task: AzureFunctionApp@1
+            displayName: 'Deploy logic app workflows'
+            inputs:              
+              azureSubscription: "${{ parameters.azureSubscription }}"
+              appType: 'functionApp'
+              appName: '$(var_azure_logicapp_name)'
+              package: '$(Pipeline.Workspace)/artifacts01/$(logicAppCIArtifactName)/$(Build.BuildId).zip'
+              deploymentMethod: 'zipDeploy'

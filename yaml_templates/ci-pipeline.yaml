@@ -1,0 +1,37 @@
+trigger:
+  branches:
+    include:
+    - release/*
+  paths:
+    exclude:
+    - cd-pipeline.yaml
+    - cd-pipeline-template.yaml
+    - ci-pipeline.yaml
+
+pool: default
+
+variables:
+  logicAppCIArtifactName: 'logicapp_publish_artifact'
+
+
+jobs:
+- job: logic_app_build
+  displayName: 'Build and publish logic app'
+  steps:
+
+  - task: CopyFiles@2
+    displayName: 'Create project folder'
+    inputs:
+      Contents: |
+        $(System.DefaultWorkingDirectory)/**
+      TargetFolder: '$(Build.ArtifactStagingDirectory)'
+      flattenFolders: false
+
+  - task: PublishPipelineArtifact@1
+    displayName: 'Publish project artifact'
+    inputs:
+      targetPath: '$(Build.ArtifactStagingDirectory)'
+      artifact: '$(logicAppCIArtifactName)'
+      publishLocation: 'pipeline'
+
+  
